@@ -1,0 +1,311 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "LiteLLM (Prometheus)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "id": 10,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total[5m])) by (requested_model)",
+          "legendFormat": "{{requested_model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "LiteLLM: Requests by model (5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "id": 11,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(rate(litellm_proxy_failed_requests_metric_total[5m])) / (sum(rate(litellm_proxy_total_requests_metric_total[5m])) + 1e-9) * 100",
+          "legendFormat": "Error rate %",
+          "refId": "A"
+        }
+      ],
+      "title": "LiteLLM: Error rate (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "id": 12,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(rate(litellm_total_tokens_metric_total[5m])) by (model)",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "LiteLLM: Tokens/sec by model",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "usd"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "id": 13,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(increase(litellm_spend_metric_total[1h])) by (model)",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "LiteLLM: Spend (1h increase)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 2,
+      "panels": [],
+      "title": "Langfuse (ClickHouse)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "${datasource_clickhouse}" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "id": 20,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "${datasource_clickhouse}" },
+          "query": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 5 MINUTE) AS time,\n  count() AS traces\nFROM langfuse.traces\nWHERE timestamp >= $__from AND timestamp <= $__to\nGROUP BY time\nORDER BY time",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Langfuse: Trace count (5m buckets)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "${datasource_clickhouse}" },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "id": 21,
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "${datasource_clickhouse}" },
+          "query": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 5 MINUTE) AS time,\n  countIf(level = 'ERROR') / nullIf(count(), 0) * 100 AS error_rate_pct\nFROM langfuse.traces\nWHERE timestamp >= $__from AND timestamp <= $__to\nGROUP BY time\nORDER BY time",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Langfuse: Trace Error rate (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "${datasource_clickhouse}" },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "id": 22,
+      "targets": [
+        {
+          "datasource": { "type": "grafana-clickhouse-datasource", "uid": "${datasource_clickhouse}" },
+          "query": "SELECT\n  toStartOfInterval(timestamp, INTERVAL 5 MINUTE) AS time,\n  quantile(0.95)(latency) AS p95_latency_ms\nFROM langfuse.traces\nWHERE timestamp >= $__from AND timestamp <= $__to\n  AND latency IS NOT NULL\nGROUP BY time\nORDER BY time",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Langfuse: Trace p95 latency (ms)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 3,
+      "panels": [],
+      "title": "vLLM (Prometheus)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 15 },
+      "id": 30,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(rate(vllm_request_success_total[5m])) or vector(0)",
+          "legendFormat": "Success",
+          "refId": "A"
+        }
+      ],
+      "title": "vLLM: Requests success rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 15 },
+      "id": 31,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(rate(vllm_num_tokens_generated_total[5m])) or vector(0)",
+          "legendFormat": "tokens/sec",
+          "refId": "A"
+        }
+      ],
+      "title": "vLLM: Throughput (tokens/sec)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "id": 4,
+      "panels": [],
+      "title": "Qdrant (Prometheus)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 22 },
+      "id": 40,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(rate(qdrant_grpc_server_requests_total[5m])) or vector(0)",
+          "legendFormat": "Requests",
+          "refId": "A"
+        }
+      ],
+      "title": "Qdrant: gRPC requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 22 },
+      "id": 41,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource_prometheus}" },
+          "expr": "sum(rate(qdrant_grpc_server_handled_total[5m])) by (grpc_code) or vector(0)",
+          "legendFormat": "{{grpc_code}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Qdrant: Responses by status",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["llmops", "metrics", "langfuse", "litellm", "vllm", "qdrant"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Prometheus",
+        "multi": false,
+        "name": "datasource_prometheus",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": { "selected": false, "text": "ClickHouse", "value": "ClickHouse" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "ClickHouse",
+        "multi": false,
+        "name": "datasource_clickhouse",
+        "options": [],
+        "query": "grafana-clickhouse-datasource",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "title": "LLMOps Metrics Dashboard",
+  "uid": "llmops-metrics",
+  "version": 1,
+  "weekStart": ""
+}
